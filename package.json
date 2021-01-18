@@ -1,0 +1,22 @@
+{
+  "name": "expresstest",
+  "version": "1.0.0",
+  "description": "test",
+  "main": "app.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "nodemon app.js"
+  },
+  "author": "dwarf",
+  "license": "ISC",
+  "dependencies": {
+    "eapi": "^0.1.0",
+    "express": "^4.17.1",
+    "status-is-ok": "^1.2.0",
+    "twig": "^1.15.4",
+    "vis-network": "^8.5.6"
+  },
+  "devDependencies": {
+    "morgan": "^1.10.0"
+  }
+}
