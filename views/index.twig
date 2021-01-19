@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="fr">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width,initial-scale=1.0">
+        <title>Test cabling</title>
+        <link rel="stylesheet" type="text/css" href="/stylesheets/style.css">
+        <script type="text/javascript" src="/scripts/vis-network/standalone/umd/vis-network.min.js"></script>
+    </head>
+    <body>    
+            <nav>
+                <ul class = "listeNav">
+                    <li class="itemNav"><a href="cablingTheorical">Cabling Theoric</a></li>
+                    <li class="itemNav"><a href="cablingDiffFromLlpd">Cabling Diff</a></li>
+                    <li class="itemNav"><a href="lldpMapDynamic">Lldp Map</a></li>
+                    <li class="itemNav"><a href="">AVD</a></li>
+                </ul>
+                <!-- <img src="" alt="log menu" class="logoMenu"> -->
+            </nav>
+            <div class="column">
+                <div class="information">
+                    {% block information %}{% endblock %}
+                </div>
+                <div class="myNetwork" id="myNetwork"></div>
+            </div>
+
+        {% block javascripts %}{% endblock %}
+    </body>
+</html>

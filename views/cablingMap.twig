@@ -1,0 +1,69 @@
+{% extends "index.twig" %}
+
+
+{% block information %}
+<div class="links"></div>
+<div class="nodes"></div>
+
+{% endblock %}
+
+{% block javascripts %}
+    <script type="text/javascript">
+      var myData = {{ dataSend |json_encode()}};
+      nodes = myData.nodes
+      edges = myData.edges
+      totalLinks = myData.linksInformations.totalLinks
+      badLinks = myData.linksInformations.badLinks
+      badLinkPercent = (badLinks*100/totalLinks).toFixed(2)
+      totalNodes = myData.nodesInformations.totalNodes
+      badNodes = myData.nodesInformations.badNodes
+      badNodesPercent = (badNodes*100/totalNodes).toFixed(2)
+
+      var container = document.getElementById('myNetwork');
+      var data = {
+        nodes: nodes,
+        edges: edges,
+      };
+      var options = {
+        physics:{
+          enabled: false,
+          minVelocity: 0.75
+        },
+        layout:{
+          hierarchical:{
+            enabled: true,
+            levelSeparation: 300,
+            direction: 'UD',
+            nodeSpacing: 300,
+            sortMethod: 'directed'
+          }
+        },
+        nodes:{
+          brokenImage: "http://localhost:8080/images/black.png"
+        },
+        interaction:{
+          hover:true}
+      };
+      var network = new vis.Network(container, data, options);
+
+      // Add elements for information
+      const parent = document.querySelector('.links');
+      let linkTotal = document.createElement('label')
+      linkTotal.innerText = `Nbre of links : ${totalLinks}`;
+      parent.appendChild(linkTotal)
+
+      let linkBad = document.createElement('label')
+      linkBad.innerText = `Nbre of Bad links : ${badLinks} (${badLinkPercent}%)`;
+      parent.appendChild(linkBad)
+
+      const parentNodes = document.querySelector('.nodes');
+      let nodeTotal = document.createElement('label')
+      nodeTotal.innerText = `Nbre of nodes : ${totalNodes}`;
+      parentNodes.appendChild(nodeTotal)
+
+      let nodeBad = document.createElement('label')
+      nodeBad.innerText = `Nbre of Bad nodes : ${badNodes} (${badNodesPercent}%)`;
+      parentNodes.appendChild(nodeBad)
+
+    </script>
+{% endblock %}
