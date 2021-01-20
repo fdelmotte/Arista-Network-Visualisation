@@ -66,6 +66,20 @@ function fillNodeTemplate(device,level,equipmentsIndex,nodes){
     nodes.findIndex(x => x.id == s.id) === -1 && nodes.push(s)
 }
 
+// Fonctio permettant de tester le device - api management enable or device reachable
+let testDevice = (equipment)=>{
+    return new Promise((resolve,reject)=>{
+        const isUrlOk = new IsOk()
+        isUrlOk.check(`http://${equipment}`, (data,err)=>{
+            if (err != undefined) {
+                resolve(err.status)
+            }else{
+                resolve(err)
+            }
+        });
+    });
+}
+
 // Statistic sur les liens
 function globalLinkInformation(edges){
     const totalLinks = edges.length
@@ -98,8 +112,7 @@ function colorNodeIcon (resultats,nodes){
             nodes[index].image = "http://localhost:8090/images/green.png"
         }else{
             nodes[index].image = "http://localhost:8090/images/red.png"
-        }
-        
+        }   
     });
 }
 
@@ -263,12 +276,99 @@ async function cablingDiffFileVsLldp(){
 }
 
 // Fonction permettant de decouvrir la Map a partir des spines
+async function cablingFromLldp(next){
+    console.log('Start of the function cablingFromLldp')
+    const equipmentsIndex = [] // Memorisation des equipements de facon unique
+    const nodes = []
+    const edges = []
+    // const devicesLevel =[]
+    // Creation d'un tableau multi dimensionel
+    var devicesLevel = Array.from(Array(4), () => new Array());
+    let level = 0 // Le level de base est 0 - les spines ont le niveau 0
+    // Memorisation des spines
+    devicesLevel[level] = (next['spines']).split(',')
+   
+    // Memorisation du deviceLevel[0] corespondant aux spines
+    devicesLevel[level].map((device)=>{
+        equipmentsIndex.push(device)
+    })
 
+    // Setup du level des spines
+    for (let device of equipmentsIndex){
+        fillNodeTemplate(device,0,equipmentsIndex,nodes)
+    }
+    
+    for (let level = 0; level<3; level++){
+        // Test si il y a des devices dans la table
+        if (devicesLevel[level].length !== 0){
+            // Appel de le fonction permettant d'interroger les devices en parallele
+            let resultatLldp = await promesseGlobaleEapi(['show lldp neighbors'],devicesLevel[level])
+            // Traitement du resultat
+            for (let lldpDeviceInfo of resultatLldp){
+                // Memorisation de l'index afin de retrouver le device dans equipmentsIndex
+                let deviceLldpIndex = resultatLldp.indexOf(lldpDeviceInfo)
+                let device = devicesLevel[level][deviceLldpIndex]
 
+                for (let lldpNeighborsInfo of lldpDeviceInfo[0].lldpNeighbors){
+                    let localPort = lldpNeighborsInfo.port.split('Ethernet')[1]
+                    let remotePort = lldpNeighborsInfo.neighborPort.split('Ethernet')[1]
+                    let remoteDevice = lldpNeighborsInfo.neighborDevice
+                    let remoteLevel = parseInt(level) + 1
+                    
+                    // Verification que l'equipement remote n'est pas dans equipmentsIndex
+                    if (equipmentsIndex.indexOf(remoteDevice)===-1){
+                        equipmentsIndex.push(remoteDevice)
+                    }
+                    // Verification si le device est joignable
+                    let resultat = await testDevice(remoteDevice)
+                    // Memorisation du device dans nodes - visio-network reference pour les nodes
+                    fillNodeTemplate(remoteDevice,remoteLevel,equipmentsIndex,nodes)
+                    fillEdgeTemplate(device,remoteDevice,equipmentsIndex,edges,'green',localPort,remotePort)
 
+                    if (resultat === 200){
+                        if((devicesLevel[remoteLevel]).indexOf(remoteDevice)===-1){
+                            devicesLevel[remoteLevel].push(remoteDevice)
+                        }
+                    }
 
+                    // Le level0 donne les spines, level1 correspond au leaf decouvert avec le level0
+                    // le level2 est le resultat du lldp fait avec le level1 et de ce fait le level0 apparait. il faut donc l'enlever
+                    devicesLevel[remoteLevel] = devicesLevel[remoteLevel].filter( function( el ) {
+                        return !devicesLevel[0].includes( el );
+                    })
+                }
+            }
+        }
+    }
+    // Promesse permettant de traiter le test des equipements en paralleles
+    var fn = function testDevice(equipment){
+        return new Promise((resolve,reject)=>{
+            const isUrlOk = new IsOk()
+            isUrlOk.check(`http://${equipment}`, (data,err)=>{
+                if (err != undefined) {
+                    resolve(err.status)
+                }else{
+                    resolve(err)
+                }
+            });
+        });
+    }
+    var actions = equipmentsIndex.map(fn);
+    var resultats = await Promise.all(actions)
+    
+    // Colorisation de l'icon du node
+    colorNodeIcon(resultats,nodes)
+
+    // Statistics concernant les nodes et edges
+    let resultatLinks = await globalLinkInformation(edges)
+    let resultatNodes = await globalNodeInformation(nodes)
+
+    console.log('End of the function cablingFromLldp')
+    return ([nodes,edges,resultatLinks,resultatNodes]) 
+}
 
 
 // Export des fonctions
 exports.cablingFromFile = cablingFromFile
 exports.cablingDiffFileVsLldp = cablingDiffFileVsLldp
+exports.cablingFromLldp = cablingFromLldp

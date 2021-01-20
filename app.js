@@ -46,14 +46,15 @@ app.get('/lldpMapDynamic',(req,res)=>{
     nodesInformations = {"totalNodes":0 ,"badNodes":0}
     nodes = []
     edges = []
-    res.render('lldpMapDynamicGet.twig', {dataSend:{nodes:nodes,edges:edges,linksInformations:linksInformations,nodesInformations:nodesInformations}})
+    res.render('lldpMapDynamic.twig', {dataSend:{nodes:nodes,edges:edges,linksInformations:linksInformations,nodesInformations:nodesInformations}})
 })
 
-// app.post('/lldpMapDynamicPost', async (req,res)=>{
-//     let resultat = await mod1.lldpMapV3(req.body)
-//     const [nodes,edges,linksInformations,nodesInformations]=resultat
-//     res.render('lldpMapDynamicPost.twig', {dataSend:{nodes:nodes,edges:edges,linksInformations:0,nodesInformations:0}});
-// })
+app.post('/lldpMapDynamicPost', async (req,res)=>{
+    console.log(req.body)
+    let resultat = await mod1.cablingFromLldp(req.body)
+    const [nodes,edges,linksInformations,nodesInformations]=resultat
+    res.render('lldpMapDynamic.twig', {dataSend:{nodes:nodes,edges:edges,linksInformations:linksInformations,nodesInformations:nodesInformations}});
+})
 
 
 
